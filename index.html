@@ -948,11 +948,19 @@
       });
     }
 
+    // native link/image dragging would swallow the pointer stream mid-drag
+    card.addEventListener("dragstart", function (e) { e.preventDefault(); });
+    Array.prototype.forEach.call(card.querySelectorAll("a, img"), function (n) {
+      n.setAttribute("draggable", "false");
+    });
+
     var startX = 0, startY = 0, active = false, ghost = null, over = false, pointerId = null;
 
     function overSlot(x, y) {
-      var r = slot.getBoundingClientRect();
-      var pad = 28;
+      // the whole machine accepts the cartridge, not just the mouth of the slot:
+      // releasing anywhere on the cabinet reads the card
+      var r = cab.getBoundingClientRect();
+      var pad = 12;
       return x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad;
     }
 
@@ -971,6 +979,10 @@
       startY = e.clientY;
       active = false;
       over = false;
+      // capture immediately so a fast flick still delivers the move/up back to the card
+      if (card.setPointerCapture) {
+        try { card.setPointerCapture(pointerId); } catch (err) { /* ignore */ }
+      }
     });
 
     card.addEventListener("pointermove", function (e) {
